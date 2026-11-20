@@ -56,19 +56,19 @@ func realMain(args []string, stdout, stderr io.Writer) int {
 	case "report":
 		return cmdReport(args[1:], stdout, stderr)
 	case "version", "--version":
-		fmt.Fprintln(stdout, "ferret", Version)
+		_, _ = fmt.Fprintln(stdout, "ferret", Version)
 		return 0
 	case "-h", "--help", "help":
 		usage(stdout)
 		return 0
 	}
-	fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
+	_, _ = fmt.Fprintf(stderr, "unknown command %q\n\n", args[0])
 	usage(stderr)
 	return 2
 }
 
 func usage(w io.Writer) {
-	fmt.Fprint(w, `usage:
+	_, _ = fmt.Fprint(w, `usage:
   ferret run      --tests SUITE.yaml --output DIR [--env-file FILE] [--tag T] [--exclude-tag T] [--scenario ID] [--debug] [--log-file FILE] [--save-files DIR]
   ferret validate --tests SUITE.yaml [--env-file FILE]
   ferret list     --tests SUITE.yaml [--tag T] [--exclude-tag T]
@@ -142,7 +142,7 @@ func readEnvFiles(paths []string, contract *config.Contract) (map[string]string,
 
 func printErrs(w io.Writer, errs []error) {
 	for _, e := range errs {
-		fmt.Fprintf(w, "  - %v\n", e)
+		_, _ = fmt.Fprintf(w, "  - %v\n", e)
 	}
 }
 
@@ -156,19 +156,19 @@ func cmdValidate(args []string, stdout, stderr io.Writer) int {
 	}
 	s, err := loadSuite(&c)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	if errs := s.Validate(); len(errs) > 0 {
-		fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
+		_, _ = fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
 		printErrs(stderr, errs)
 		return 2
 	}
 	if _, err := readEnvFiles(c.envFiles, s.Contract); err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
-	fmt.Fprintf(stdout, "suite %s is valid: %d scenarios, %d setup steps\n", s.Name, len(s.Loaded), len(s.Setup))
+	_, _ = fmt.Fprintf(stdout, "suite %s is valid: %d scenarios, %d setup steps\n", s.Name, len(s.Loaded), len(s.Setup))
 	return 0
 }
 
@@ -182,7 +182,7 @@ func cmdReport(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if in == "" {
-		fmt.Fprintln(stderr, "error: --input is required")
+		_, _ = fmt.Fprintln(stderr, "error: --input is required")
 		return 2
 	}
 	if out == "" {
@@ -190,16 +190,16 @@ func cmdReport(args []string, stdout, stderr io.Writer) int {
 	}
 	res, err := report.Build(in, out)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
-	fmt.Fprintf(stdout, "report written to %s", res.Output)
+	_, _ = fmt.Fprintf(stdout, "report written to %s", res.Output)
 	if res.Attachments > 0 {
-		fmt.Fprintf(stdout, " (%d attachment(s) referenced, %d copied)", res.Attachments, res.Copied)
+		_, _ = fmt.Fprintf(stdout, " (%d attachment(s) referenced, %d copied)", res.Attachments, res.Copied)
 	}
-	fmt.Fprintln(stdout)
+	_, _ = fmt.Fprintln(stdout)
 	if len(res.Missing) > 0 {
-		fmt.Fprintf(stderr, "warning: %d referenced attachment(s) are missing next to %s and are shown as missing in the report\n", len(res.Missing), in)
+		_, _ = fmt.Fprintf(stderr, "warning: %d referenced attachment(s) are missing next to %s and are shown as missing in the report\n", len(res.Missing), in)
 	}
 	return 0
 }
@@ -218,11 +218,11 @@ func cmdDocs(args []string, stdout, stderr io.Writer) int {
 	}
 	s, err := loadSuite(&c)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	if errs := s.Validate(); len(errs) > 0 {
-		fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
+		_, _ = fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
 		printErrs(stderr, errs)
 		return 2
 	}
@@ -231,27 +231,27 @@ func cmdDocs(args []string, stdout, stderr io.Writer) int {
 	}
 	old, err := os.ReadFile(readme)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	updated, err := docs.Replace(string(old), docs.Generate(s))
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %s: %v\n", readme, err)
+		_, _ = fmt.Fprintf(stderr, "error: %s: %v\n", readme, err)
 		return 2
 	}
 	if updated == string(old) {
-		fmt.Fprintf(stdout, "%s is up to date\n", readme)
+		_, _ = fmt.Fprintf(stdout, "%s is up to date\n", readme)
 		return 0
 	}
 	if check {
-		fmt.Fprintf(stderr, "%s is out of date: run `ferret docs --tests %s`\n", readme, filepath.ToSlash(c.suiteArg()))
+		_, _ = fmt.Fprintf(stderr, "%s is out of date: run `ferret docs --tests %s`\n", readme, filepath.ToSlash(c.suiteArg()))
 		return 1
 	}
 	if err := os.WriteFile(readme, []byte(updated), 0o644); err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
-	fmt.Fprintf(stdout, "updated %s\n", readme)
+	_, _ = fmt.Fprintf(stdout, "updated %s\n", readme)
 	return 0
 }
 
@@ -270,12 +270,12 @@ func cmdList(args []string, stdout, stderr io.Writer) int {
 	}
 	s, err := loadSuite(&c)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	sel, err := engine.Select(s, engine.Selection{Tags: c.tags, ExcludeTags: c.exclude, Scenarios: c.scenarios})
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	req, opt := engine.NeededInputs(s, sel)
@@ -289,12 +289,12 @@ func cmdList(args []string, stdout, stderr io.Writer) int {
 		if x.ByDependency {
 			dep = "  (by dependency)"
 		}
-		fmt.Fprintf(stdout, "%-40s tags=[%s] steps=%d assertions=%d%s\n", x.S.ID, strings.Join(x.S.Tags, ","), len(x.S.Steps), groups, dep)
+		_, _ = fmt.Fprintf(stdout, "%-40s tags=[%s] steps=%d assertions=%d%s\n", x.S.ID, strings.Join(x.S.Tags, ","), len(x.S.Steps), groups, dep)
 	}
-	fmt.Fprintf(stdout, "\nrequired inputs: %s\n", strings.Join(req, ", "))
+	_, _ = fmt.Fprintf(stdout, "\nrequired inputs: %s\n", strings.Join(req, ", "))
 	if len(opt) > 0 {
 		sort.Strings(opt)
-		fmt.Fprintf(stdout, "optional inputs: %s\n", strings.Join(opt, ", "))
+		_, _ = fmt.Fprintf(stdout, "optional inputs: %s\n", strings.Join(opt, ", "))
 	}
 	return 0
 }
@@ -315,66 +315,64 @@ func cmdRun(args []string, stdout, stderr io.Writer) int {
 		return 2
 	}
 	if out == "" {
-		fmt.Fprintln(stderr, "error: --output is required")
+		_, _ = fmt.Fprintln(stderr, "error: --output is required")
 		return 2
 	}
 	if rerun != "" {
 		prev, err := results.Load(rerun)
 		if err != nil {
-			fmt.Fprintf(stderr, "error: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 			return 2
 		}
 		ids := prev.FailedScenarioIDs()
 		if len(ids) == 0 {
-			fmt.Fprintf(stderr, "error: %s has no failed, errored or blocked scenarios to rerun\n", rerun)
+			_, _ = fmt.Fprintf(stderr, "error: %s has no failed, errored or blocked scenarios to rerun\n", rerun)
 			return 2
 		}
 		c.scenarios = append(c.scenarios, ids...)
-		fmt.Fprintf(stdout, "rerunning %d scenario(s) from %s\n", len(ids), rerun)
+		_, _ = fmt.Fprintf(stdout, "rerunning %d scenario(s) from %s\n", len(ids), rerun)
 	}
 	// From here on this run owns the output directory: the previous run's own files
 	// are removed first (after --rerun-failed has read them), so a run that fails
 	// early can never leave an old results.json to be mistaken for the current one.
 	if err := results.PrepareOutputDir(out); err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	s, err := loadSuite(&c)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	if errs := s.Validate(); len(errs) > 0 {
-		fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
+		_, _ = fmt.Fprintf(stderr, "suite %s is invalid (%d problem(s)):\n", s.Name, len(errs))
 		printErrs(stderr, errs)
 		return 2
 	}
 	filter := engine.Selection{Tags: c.tags, ExcludeTags: c.exclude, Scenarios: c.scenarios}
 	sel, err := engine.Select(s, filter)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	if len(sel) == 0 {
-		fmt.Fprintln(stderr, "error: the selection matches no scenarios")
+		_, _ = fmt.Fprintln(stderr, "error: the selection matches no scenarios")
 		return 2
 	}
 
 	// Preflight: resolve only the inputs the selection needs.
 	dot, err := readEnvFiles(c.envFiles, s.Contract)
 	if err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	required, optional := engine.NeededInputs(s, sel)
 	sort.Strings(required)
 	values, errs := s.Contract.Resolve(required, config.Sources{Env: os.LookupEnv, Dotenv: dot})
 	optVals, optErrs := s.Contract.Resolve(optional, config.Sources{Env: os.LookupEnv, Dotenv: dot})
-	for _, e := range optErrs { // an optional input that is set but invalid is still an error
-		errs = append(errs, e)
-	}
+	errs = append(errs, optErrs...) // an optional input that is set but invalid is still an error
 	if len(errs) > 0 {
-		fmt.Fprintln(stderr, "configuration problems (no requests were sent):")
+		_, _ = fmt.Fprintln(stderr, "configuration problems (no requests were sent):")
 		printErrs(stderr, errs)
 		return 2
 	}
@@ -393,10 +391,10 @@ func cmdRun(args []string, stdout, stderr io.Writer) int {
 	if logFile != "" {
 		f, err := os.Create(logFile)
 		if err != nil {
-			fmt.Fprintf(stderr, "error: cannot write the log file: %v\n", err)
+			_, _ = fmt.Fprintf(stderr, "error: cannot write the log file: %v\n", err)
 			return 2
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		logs = append(logs, f)
 	}
 	if len(logs) > 0 {
@@ -406,7 +404,7 @@ func cmdRun(args []string, stdout, stderr io.Writer) int {
 	res := r.Run(ctx, sel, filter)
 
 	if err := results.WriteAll(out, res); err != nil {
-		fmt.Fprintf(stderr, "error: %v\n", err)
+		_, _ = fmt.Fprintf(stderr, "error: %v\n", err)
 		return 2
 	}
 	printSummary(stdout, res, out)
@@ -426,26 +424,26 @@ func printFailures(w io.Writer, r *results.Results) {
 			continue
 		}
 		if first {
-			fmt.Fprintln(w, "\nFailures:")
+			_, _ = fmt.Fprintln(w, "\nFailures:")
 			first = false
 		}
-		fmt.Fprintf(w, "\n  %s [%s]\n", sc.ID, sc.Status)
+		_, _ = fmt.Fprintf(w, "\n  %s [%s]\n", sc.ID, sc.Status)
 		if sc.Reason != "" {
-			fmt.Fprintf(w, "    reason: %s\n", sc.Reason)
+			_, _ = fmt.Fprintf(w, "    reason: %s\n", sc.Reason)
 		}
 		for _, st := range sc.Steps {
 			if st.Status == results.Passed {
 				continue
 			}
-			fmt.Fprintf(w, "    step %s [%s]\n", st.ID, st.Status)
+			_, _ = fmt.Fprintf(w, "    step %s [%s]\n", st.ID, st.Status)
 			if st.Reason != "" {
-				fmt.Fprintf(w, "      reason: %s\n", st.Reason)
+				_, _ = fmt.Fprintf(w, "      reason: %s\n", st.Reason)
 			}
 			for _, g := range st.Groups {
 				if g.Status == results.Passed {
 					continue
 				}
-				fmt.Fprintf(w, "      - %s [%s]\n", g.Name, g.Status)
+				_, _ = fmt.Fprintf(w, "      - %s [%s]\n", g.Name, g.Status)
 				for _, c := range g.Checks {
 					if c.Status == results.Passed {
 						continue
@@ -454,7 +452,7 @@ func printFailures(w io.Writer, r *results.Results) {
 					if len(msg) > maxMsg {
 						msg = msg[:maxMsg] + "..."
 					}
-					fmt.Fprintf(w, "          %s: %s\n", c.Desc, msg)
+					_, _ = fmt.Fprintf(w, "          %s: %s\n", c.Desc, msg)
 				}
 			}
 		}
@@ -464,15 +462,15 @@ func printFailures(w io.Writer, r *results.Results) {
 func printSummary(w io.Writer, r *results.Results, out string) {
 	printFailures(w, r)
 	a, s, su := r.Totals.Assertions, r.Totals.Scenarios, r.Totals.SetupAssertions
-	fmt.Fprintf(w, "\nAssertions: total %d | passed %d | failed %d | errored %d | blocked %d\n", a.Total, a.Passed, a.Failed, a.Errored, a.Blocked)
-	fmt.Fprintf(w, "Scenarios:  total %d | passed %d | failed %d | errored %d | blocked %d\n", s.Total, s.Passed, s.Failed, s.Errored, s.Blocked)
+	_, _ = fmt.Fprintf(w, "\nAssertions: total %d | passed %d | failed %d | errored %d | blocked %d\n", a.Total, a.Passed, a.Failed, a.Errored, a.Blocked)
+	_, _ = fmt.Fprintf(w, "Scenarios:  total %d | passed %d | failed %d | errored %d | blocked %d\n", s.Total, s.Passed, s.Failed, s.Errored, s.Blocked)
 	if su.Total > 0 {
-		fmt.Fprintf(w, "Setup checks (not counted as regression assertions): %d, passed %d\n", su.Total, su.Passed)
+		_, _ = fmt.Fprintf(w, "Setup checks (not counted as regression assertions): %d, passed %d\n", su.Total, su.Passed)
 	}
-	fmt.Fprintf(w, "HTTP calls: %d (including setup and helper calls)\n", r.Totals.Calls)
+	_, _ = fmt.Fprintf(w, "HTTP calls: %d (including setup and helper calls)\n", r.Totals.Calls)
 	if !r.Run.Selection.Complete {
-		fmt.Fprintf(w, "Partial run: %d of %d scenarios selected (+%d by dependency); this is not full coverage.\n",
+		_, _ = fmt.Fprintf(w, "Partial run: %d of %d scenarios selected (+%d by dependency); this is not full coverage.\n",
 			r.Run.Selection.Selected, r.Run.Selection.Available, r.Run.Selection.ByDependency)
 	}
-	fmt.Fprintf(w, "Results written to %s (results.json, junit.xml)\n", out)
+	_, _ = fmt.Fprintf(w, "Results written to %s (results.json, junit.xml)\n", out)
 }

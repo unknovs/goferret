@@ -50,7 +50,7 @@ rebuild: the tests are data, not code.
 
 ## Install
 
-Requires Go 1.24 or newer to build from source.
+Requires Go 1.27 or newer to build from source.
 
 ```sh
 go install github.com/unknovs/goferret/cmd/ferret@latest

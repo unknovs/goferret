@@ -131,11 +131,6 @@ func (c *Contract) Resolve(names []string, src Sources) (map[string]Value, []err
 }
 
 func (c *Contract) resolveOne(name string, def InputDef, src Sources) (Value, bool, error) {
-	type lookup struct {
-		get    func(string) (string, bool)
-		label  string
-		isFile bool
-	}
 	envGet := src.Env
 	if envGet == nil {
 		envGet = func(string) (string, bool) { return "", false }

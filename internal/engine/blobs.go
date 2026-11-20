@@ -23,8 +23,6 @@ import (
 //
 // Response bodies can additionally be saved as real files (--save-files).
 
-const minBlobChars = 200
-
 var blobRe = regexp.MustCompile(`(?:"([^"\\]{1,80})"\s*:\s*)?"([A-Za-z0-9+/]{200,}={0,2})"`)
 
 // blobCtx says where saved files go. A zero value saves nothing.
@@ -88,10 +86,6 @@ func describeBlob(raw []byte) (marker, saveExt string) {
 			strings.ToUpper(cert.SerialNumber.Text(16)), strings.ToUpper(hex.EncodeToString(s1[:])), strings.ToUpper(hex.EncodeToString(s256[:8]))), ""
 	}
 	n := len(raw)
-	head := raw
-	if len(head) > 200 {
-		head = head[:200]
-	}
 	switch {
 	case strings.HasPrefix(string(raw), "%PDF"):
 		return fmt.Sprintf("<file: PDF, %d bytes>", n), "pdf"

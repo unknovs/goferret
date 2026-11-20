@@ -1,0 +1,9 @@
+version: "2"
+
+linters:
+  exclusions:
+    rules:
+      # Test helpers write fixtures and fake-server responses; a failure there surfaces in the assertions.
+      - path: _test\.go
+        linters:
+          - errcheck

@@ -246,7 +246,7 @@ func (r *Runner) do(ctx context.Context, scenario string, st suite.Step, sc *Sco
 		r.traceCall(call)
 		return nil, fmt.Errorf("request failed: %s", call.Error)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	data, err := io.ReadAll(io.LimitReader(res.Body, MaxResponseBody+1))
 	elapsed := time.Since(start)
 	call.DurationMs = elapsed.Milliseconds()

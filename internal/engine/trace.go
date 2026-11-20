@@ -24,7 +24,7 @@ import (
 
 func (r *Runner) logf(format string, a ...any) {
 	if r.Debug != nil {
-		fmt.Fprintln(r.Debug, r.Redact.String(fmt.Sprintf(format, a...)))
+		_, _ = fmt.Fprintln(r.Debug, r.Redact.String(fmt.Sprintf(format, a...)))
 	}
 }
 

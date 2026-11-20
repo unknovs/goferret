@@ -434,12 +434,12 @@ func (r *Runner) progress(sr results.ScenarioResult) {
 			}
 		}
 	}
-	fmt.Fprintf(r.Progress, "%s %-40s %d steps, %d assertions, %.1fs\n", tag, sr.ID, len(sr.Steps), groups, float64(sr.DurationMs)/1000)
+	_, _ = fmt.Fprintf(r.Progress, "%s %-40s %d steps, %d assertions, %.1fs\n", tag, sr.ID, len(sr.Steps), groups, float64(sr.DurationMs)/1000)
 	if sr.Status == results.Passed {
 		return
 	}
 	if sr.Reason != "" {
-		fmt.Fprintf(r.Progress, "        %s\n", sr.Reason)
+		_, _ = fmt.Fprintf(r.Progress, "        %s\n", sr.Reason)
 	}
 	if r.Debug != nil {
 		return // the log above already listed every failing check; do not repeat it
@@ -449,7 +449,7 @@ func (r *Runner) progress(sr results.ScenarioResult) {
 			continue
 		}
 		if st.Status != results.Passed && st.Reason != "" {
-			fmt.Fprintf(r.Progress, "        step %s: %s\n", st.ID, st.Reason)
+			_, _ = fmt.Fprintf(r.Progress, "        step %s: %s\n", st.ID, st.Reason)
 		}
 		for _, g := range st.Groups {
 			if g.Status == results.Passed || g.Status == results.Blocked {
@@ -457,7 +457,7 @@ func (r *Runner) progress(sr results.ScenarioResult) {
 			}
 			for _, c := range g.Checks {
 				if c.Status != results.Passed {
-					fmt.Fprintf(r.Progress, "        %s: [%s] %s -> %s\n", st.ID, g.Name, c.Desc, c.Message)
+					_, _ = fmt.Fprintf(r.Progress, "        %s: [%s] %s -> %s\n", st.ID, g.Name, c.Desc, c.Message)
 				}
 			}
 		}
