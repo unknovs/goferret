@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}}</title>
+<style>
+:root{--bg:#f7f8fa;--panel:#fff;--ink:#1d2430;--mute:#667085;--line:#e3e7ee;--pass:#117a3d;--passbg:#e6f6ec;--fail:#c0262d;--failbg:#fdeaea;--err:#b45309;--errbg:#fef3e2;--blk:#5b6472;--blkbg:#eceff3;--accent:#2457c5}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--panel:#1a1f28;--ink:#e6e9ef;--mute:#9aa4b2;--line:#2b3340;--pass:#4cc38a;--passbg:#14301f;--fail:#ff7b80;--failbg:#3a1a1d;--err:#f5b35c;--errbg:#3a2a12;--blk:#aab2bf;--blkbg:#262c37;--accent:#7aa2ff}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1180px;margin:0 auto;padding:20px 16px 60px}
+h1{font-size:20px;margin:0 0 2px}.sub{color:var(--mute);margin-bottom:16px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.card h2{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--mute);margin:0 0 4px;font-weight:600}
+.big{font-size:22px;font-weight:650}.counts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600}
+.passed{color:var(--pass);background:var(--passbg)}.failed{color:var(--fail);background:var(--failbg)}.errored{color:var(--err);background:var(--errbg)}.blocked{color:var(--blk);background:var(--blkbg)}
+.banner{border:1px solid var(--err);background:var(--errbg);color:var(--ink);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0}
+.bar input[type=search]{flex:1 1 240px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink)}
+.bar button{padding:6px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);cursor:pointer}
+.bar button[aria-pressed=true]{border-color:var(--accent);color:var(--accent);font-weight:600}
+details.sc{background:var(--panel);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+details.sc>summary{cursor:pointer;padding:9px 12px;display:flex;gap:10px;align-items:center;list-style:none}
+details.sc>summary::-webkit-details-marker{display:none}
+.id{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}.dim{color:var(--mute);font-size:12px}
+.body{padding:2px 14px 12px;border-top:1px solid var(--line)}
+.step{margin:10px 0 0}.step>.hd{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.reason{color:var(--mute);font-size:12px;margin:2px 0 0 0}
+ul.as{list-style:none;margin:6px 0 0;padding:0}ul.as li{padding:3px 0;border-top:1px dashed var(--line)}
+.chk{margin:3px 0 0 10px;font-size:12px;color:var(--mute)}.chk b{color:var(--ink);font-weight:600}
+button.link{background:none;border:0;color:var(--accent);cursor:pointer;padding:0;font:inherit}
+.call{margin:6px 0 0;border:1px solid var(--line);border-radius:6px;padding:6px 8px;background:var(--bg)}
+.call pre{margin:4px 0 0;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow:auto;font-size:12px}
+.call table{font-size:12px;border-collapse:collapse}.call td{padding:0 8px 0 0;vertical-align:top}
+.empty{color:var(--mute);padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+<h1 id="title"></h1><div class="sub" id="sub"></div>
+<div id="banners"></div>
+<div class="cards" id="cards"></div>
+<div class="bar" id="bar"></div>
+<div id="list"></div>
+</main>
+<script id="data" type="application/json">{{.Data}}</script>
+<script id="missing" type="application/json">{{.Missing}}</script>
+<script>
+(function () {
+  "use strict";
+  var R = JSON.parse(document.getElementById("data").textContent);
+  var MISSING = JSON.parse(document.getElementById("missing").textContent);
+  // Everything below uses textContent only; result data is never parsed as HTML.
+  function h(tag, attrs) {
+    var e = document.createElement(tag);
+    for (var k in (attrs || {})) { if (k === "class") e.className = attrs[k]; else if (k === "text") e.textContent = attrs[k]; else e.setAttribute(k, attrs[k]); }
+    for (var i = 2; i < arguments.length; i++) { var c = arguments[i]; if (c == null) continue; e.appendChild(typeof c === "string" ? document.createTextNode(c) : c); }
+    return e;
+  }
+  function pill(status, text) { return h("span", { "class": "pill " + status, text: text || status }); }
+  function counts(c) {
+    var d = h("div", { "class": "counts" });
+    [["passed", c.passed], ["failed", c.failed], ["errored", c.errored], ["blocked", c.blocked]].forEach(function (p) { if (p[1] > 0) d.appendChild(pill(p[0], p[1] + " " + p[0])); });
+    if (!c.total) d.appendChild(h("span", { "class": "dim", text: "none" }));
+    return d;
+  }
+  function card(title, big, c, note) {
+    var e = h("div", { "class": "card" }, h("h2", { text: title }), h("div", { "class": "big", text: String(big) }));
+    if (c) e.appendChild(counts(c));
+    if (note) e.appendChild(h("div", { "class": "dim", text: note }));
+    return e;
+  }
+  var T = R.totals, S = R.run.selection;
+  document.getElementById("title").textContent = (R.run.suite || "Test") + " test report";
+  var started = R.run.startedAt ? new Date(R.run.startedAt).toLocaleString() : "";
+  document.getElementById("sub").textContent = started + " · " + (R.run.durationMs / 1000).toFixed(1) + " s · " + (R.tool || "ferret") + " · results format v" + R.version;
+  var banners = document.getElementById("banners");
+  if (!S.complete) banners.appendChild(h("div", { "class": "banner", text: "Partial run: " + S.selectedScenarios + " of " + S.availableScenarios + " scenarios selected" + (S.includedByDependency ? " (+" + S.includedByDependency + " by dependency)" : "") + (S.tags ? "; tags: " + S.tags.join(", ") : "") + (S.excludeTags ? "; excluded: " + S.excludeTags.join(", ") : "") + (S.scenarios ? "; scenarios: " + S.scenarios.join(", ") : "") + ". This report does not claim full coverage." }));
+  if (MISSING.length) banners.appendChild(h("div", { "class": "banner", text: MISSING.length + " attachment(s) referenced by the results were not found next to the input file: " + MISSING.slice(0, 5).join(", ") + (MISSING.length > 5 ? ", …" : "") }));
+  var cards = document.getElementById("cards");
+  cards.appendChild(card("Assertions", T.assertions.total, T.assertions, "named assertion groups from the test definitions"));
+  cards.appendChild(card("Scenarios", T.scenarios.total, T.scenarios));
+  cards.appendChild(card("HTTP calls", T.httpCalls, null, "including setup, helper and cleanup calls"));
+  if (T.setupAssertions.total) cards.appendChild(card("Setup / helper checks", T.setupAssertions.total, T.setupAssertions, "not counted as regression assertions"));
+
+  var callsBySeq = {}; R.calls.forEach(function (c) { callsBySeq[c.seq] = c; });
+  var filter = { status: "all", text: "" };
+  var bar = document.getElementById("bar"), list = document.getElementById("list");
+  var search = h("input", { type: "search", placeholder: "Filter by scenario, step, assertion or tag", "aria-label": "Filter" });
+  bar.appendChild(search);
+  var btns = {};
+  ["all", "failed", "errored", "blocked", "passed"].forEach(function (s) {
+    var b = h("button", { type: "button", "aria-pressed": s === "all" ? "true" : "false", text: s });
+    b.addEventListener("click", function () { filter.status = s; Object.keys(btns).forEach(function (k) { btns[k].setAttribute("aria-pressed", k === s ? "true" : "false"); }); draw(); });
+    btns[s] = b; bar.appendChild(b);
+  });
+  search.addEventListener("input", function () { filter.text = search.value.toLowerCase(); draw(); });
+
+  function hay(sc) {
+    var parts = [sc.id, sc.description || "", (sc.tags || []).join(" ")];
+    sc.steps.forEach(function (st) { parts.push(st.id); st.assertions.forEach(function (g) { parts.push(g.name); }); });
+    return parts.join("\n").toLowerCase();
+  }
+  function callView(c) {
+    var d = h("div", { "class": "call" });
+    d.appendChild(h("div", null, h("b", { text: "#" + c.seq + " " + c.method + " " }), h("span", { "class": "id", text: c.url }), h("span", { "class": "dim", text: "  → " + (c.status || "no response") + " · " + c.durationMs + " ms" + (c.attempt ? " · attempt " + c.attempt : "") })));
+    if (c.error) d.appendChild(h("div", { "class": "reason", text: "error: " + c.error }));
+    function body(label, b) {
+      if (!b || (!b.bytes && !b.omitted)) return;
+      var wrap = h("div", null, h("div", { "class": "dim", text: label + " body, " + b.bytes + " bytes" + (b.truncated ? " (preview truncated)" : "") + (b.omitted ? " — " + b.omitted : "") }));
+      if (b.preview) wrap.appendChild(h("pre", { text: b.preview }));
+      if (b.attachment) wrap.appendChild(h("a", { href: b.attachment, target: "_blank", rel: "noopener", text: "full content (" + b.attachment + ")" }));
+      d.appendChild(wrap);
+    }
+    if (c.requestHeaders) d.appendChild(h("pre", { text: Object.keys(c.requestHeaders).map(function (k) { return k + ": " + c.requestHeaders[k]; }).join("\n") }));
+    body("request", c.requestBody);
+    body("response", c.responseBody);
+    return d;
+  }
+  function stepView(st) {
+    var d = h("div", { "class": "step" });
+    d.appendChild(h("div", { "class": "hd" }, pill(st.status), h("span", { "class": "id", text: st.id }), st.helper ? h("span", { "class": "dim", text: "helper" }) : null, st.cleanup ? h("span", { "class": "dim", text: "cleanup" }) : null));
+    if (st.reason) d.appendChild(h("div", { "class": "reason", text: st.reason }));
+    if (st.assertions.length) {
+      var ul = h("ul", { "class": "as" });
+      st.assertions.forEach(function (g) {
+        var li = h("li", null, pill(g.status), " ", h("span", { text: g.name }));
+        g.checks.filter(function (c) { return c.status !== "passed"; }).forEach(function (c) { li.appendChild(h("div", { "class": "chk" }, h("b", { text: c.desc }), " — " + (c.message || c.status))); });
+        ul.appendChild(li);
+      });
+      d.appendChild(ul);
+    }
+    if (st.calls && st.calls.length) {
+      var holder = h("div"), btn = h("button", { type: "button", "class": "link", text: "show " + st.calls.length + " HTTP call(s)" }), open = false;
+      btn.addEventListener("click", function () {
+        open = !open; holder.textContent = "";
+        if (open) st.calls.forEach(function (n) { if (callsBySeq[n]) holder.appendChild(callView(callsBySeq[n])); });
+        btn.textContent = (open ? "hide " : "show ") + st.calls.length + " HTTP call(s)";
+      });
+      d.appendChild(btn); d.appendChild(holder);
+    }
+    return d;
+  }
+  function scenarioView(sc) {
+    var det = h("details", { "class": "sc" });
+    if (sc.status === "failed" || sc.status === "errored") det.open = true;
+    var groups = 0; sc.steps.forEach(function (st) { groups += st.assertions.length; });
+    det.appendChild(h("summary", null, pill(sc.status), h("span", { "class": "id", text: sc.id }), h("span", { "class": "dim", text: (sc.kind === "setup" ? "setup · " : "") + sc.steps.length + " steps · " + groups + " checks · " + (sc.durationMs / 1000).toFixed(1) + " s" + (sc.tags && sc.tags.length ? " · " + sc.tags.join(", ") : "") + (sc.includedByDependency ? " · by dependency" : "") })));
+    var body = h("div", { "class": "body" });
+    if (sc.description) body.appendChild(h("div", { "class": "dim", text: sc.description }));
+    if (sc.reason) body.appendChild(h("div", { "class": "reason", text: sc.reason }));
+    sc.steps.forEach(function (st) { body.appendChild(stepView(st)); });
+    det.appendChild(body);
+    return det;
+  }
+  function draw() {
+    list.textContent = "";
+    var shown = 0;
+    R.scenarios.forEach(function (sc) {
+      if (filter.status !== "all" && sc.status !== filter.status) return;
+      if (filter.text && hay(sc).indexOf(filter.text) < 0) return;
+      list.appendChild(scenarioView(sc)); shown++;
+    });
+    if (!shown) list.appendChild(h("div", { "class": "empty", text: "No scenarios match the filter." }));
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+name: release
+
+# When a GitHub Release is published, the image built by `ci` for that exact commit
+# is given the release tag. It is NOT rebuilt: a version tag must point at the bytes
+# that were tested, scanned and signed. Retagging keeps the digest, so the existing
+# signature stays valid for the new tag.
+#
+# Publish releases only for commits that reached main through a push, because those
+# are the commits `ci` builds an image for.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  retag:
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Retag the tested image with the release tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          image="${REGISTRY}/${GITHUB_REPOSITORY,,}"
+          source="${image}:sha-${GITHUB_SHA}"
+
+          # `ci` may still be running for this commit: wait up to 20 minutes for its image.
+          for attempt in $(seq 1 40); do
+            if docker manifest inspect "${source}" > /dev/null 2>&1; then
+              break
+            fi
+            if [ "${attempt}" -eq 40 ]; then
+              echo "No image ${source} found. Was this commit pushed to main and built by ci?"
+              exit 1
+            fi
+            echo "Waiting for ${source} (attempt ${attempt}/40)"
+            sleep 30
+          done
+
+          # pull + tag + push keeps the manifest digest, so the signature stays valid
+          docker pull "${source}"
+          docker tag "${source}" "${image}:${TAG}"
+          docker push "${image}:${TAG}"
