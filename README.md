@@ -341,6 +341,7 @@ A scenario must have at least one step. Scenario ids must be unique across the w
   headers: { X-Mode: test }   # optional, added to the service headers
   noServiceHeaders: false     # true to skip the service's default headers
   timeoutSeconds: 10          # optional per-step timeout
+  delaySeconds: 1             # optional wait before the request, for APIs that order results by a coarse timestamp
   helper: false               # see below
   set: { today: "2026-01-01" }# variables assigned before the request is built
   json: { ... }               # one request body option, see below
@@ -477,6 +478,8 @@ A check holds one or more operators; all of them must pass.
 | `empty: true/false` | The array, string or object is empty / not empty. |
 | `contains: value` | A string contains the text, or an array contains the value. |
 | `any: { ... }` | At least one array element satisfies the nested check; its `json:` pointer is relative to the element. |
+| `in: [a, b, ...]` | The value equals one of the listed values. |
+| `all: { ... }` | Every array element satisfies the nested check (an empty array passes); its `json:` pointer is relative to the element. |
 | `decodeJson: /pointer` | The value is base64 text of a JSON document; the other operators apply to the location inside it. |
 
 A missing location fails an operator that needs a value (other than `exists`/`absent`) with
@@ -490,6 +493,7 @@ Examples:
 - { json: /count, min: 1, max: 100 }
 - { json: /items, type: array, empty: false }
 - { json: /items, any: { json: /id, eq: "{{itemId}}" } }      # some element has this id
+- { json: /items, all: { json: /id, type: string } }          # every element has a string id
 - { json: /page, neJson: /nextPage }
 - { header: Content-Type, matches: "^application/json" }
 - { body: true, contains: "ok" }

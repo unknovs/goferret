@@ -266,6 +266,12 @@ func groupID(scID, stepID, name string, seen map[string]int) string {
 
 func (r *Runner) runStep(ctx context.Context, scID string, st suite.Step, sc *Scope, cleanup bool) results.StepResult {
 	res := results.StepResult{ID: st.ID, Cleanup: cleanup, Helper: st.Helper, Status: results.Passed}
+	if st.DelaySeconds > 0 {
+		select {
+		case <-ctx.Done():
+		case <-time.After(time.Duration(st.DelaySeconds) * time.Second):
+		}
+	}
 	// set: assigns variables before the request is built
 	setNames := make([]string, 0, len(st.Set))
 	for k := range st.Set {

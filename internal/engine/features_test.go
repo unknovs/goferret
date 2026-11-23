@@ -239,3 +239,30 @@ scenarios:
 		t.Fatalf("no request may be sent for the skipped cleanup: %d calls", len(res.Calls))
 	}
 }
+
+func TestStepDelayWaitsBeforeTheRequest(t *testing.T) {
+	var firstAt, secondAt atomic.Int64
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/a" {
+			firstAt.Store(time.Now().UnixNano())
+		} else {
+			secondAt.Store(time.Now().UnixNano())
+		}
+		w.Write([]byte(`{}`))
+	}))
+	defer srv.Close()
+	s := load(t, header, `version: 1
+scenarios:
+  - id: paced
+    steps:
+      - { id: first, service: api, method: GET, path: /a, assert: [ { name: ok, checks: [ { status: 200 } ] } ] }
+      - { id: second, service: api, method: GET, path: /b, delaySeconds: 1, assert: [ { name: ok, checks: [ { status: 200 } ] } ] }
+`)
+	res, _ := runWith(t, s, inputs(srv.URL), Selection{}, Options{})
+	if !res.AllPassed() {
+		t.Fatal("run must pass")
+	}
+	if gap := time.Duration(secondAt.Load() - firstAt.Load()); gap < 900*time.Millisecond {
+		t.Fatalf("the second request must wait about a second, waited %v", gap)
+	}
+}

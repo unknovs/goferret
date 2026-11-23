@@ -197,6 +197,9 @@ func (s *Suite) validateSteps(errs *[]error, where string, steps []Step, scope m
 		if _, ok := s.Services[st.Service]; !ok {
 			add("%s: unknown service %q", w, st.Service)
 		}
+		if st.DelaySeconds < 0 || st.DelaySeconds > 300 {
+			add("%s: delaySeconds must be between 0 and 300", w)
+		}
 		switch st.Method {
 		case http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodPatch, http.MethodHead:
 		default:
@@ -348,7 +351,7 @@ func (s *Suite) checkCheck(errs *[]error, where string, c Check, scope map[strin
 		}
 	}
 	ops := 0
-	for _, b := range []bool{c.Exists != nil, c.Absent != nil, c.Type != "", c.Eq.Kind != 0, c.EqJSON != "", c.NeJSON != "", c.Ne.Kind != 0, c.Matches != "", c.Min != nil, c.Max != nil, c.Length != nil, c.LengthMin != nil, c.Empty != nil, c.Contains.Kind != 0, c.Any != nil} {
+	for _, b := range []bool{c.Exists != nil, c.Absent != nil, c.Type != "", c.Eq.Kind != 0, c.EqJSON != "", c.NeJSON != "", c.Ne.Kind != 0, c.Matches != "", c.Min != nil, c.Max != nil, c.Length != nil, c.LengthMin != nil, c.Empty != nil, c.Contains.Kind != 0, c.In.Kind != 0, c.Any != nil, c.All != nil} {
 		if b {
 			ops++
 		}
@@ -390,13 +393,19 @@ func (s *Suite) checkCheck(errs *[]error, where string, c Check, scope map[strin
 		}
 		s.refCheck(errs, where, c.Matches, scope)
 	}
-	for _, n := range []*yaml.Node{&c.Eq, &c.Ne, &c.Contains} {
+	if c.In.Kind != 0 && c.In.Kind != yaml.SequenceNode {
+		add("%s: in needs a list of values", where)
+	}
+	for _, n := range []*yaml.Node{&c.Eq, &c.Ne, &c.Contains, &c.In} {
 		if n != nil {
 			_ = tmpl.Strings(n, func(str string) error { s.refCheck(errs, where, str, scope); return nil })
 		}
 	}
 	if c.Any != nil {
 		s.checkCheck(errs, where+" (any)", *c.Any, scope)
+	}
+	if c.All != nil {
+		s.checkCheck(errs, where+" (all)", *c.All, scope)
 	}
 }
 

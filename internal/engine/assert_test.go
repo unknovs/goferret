@@ -38,6 +38,7 @@ func TestOperators(t *testing.T) {
 		"{json: /empty, empty: true}", "{json: /arr, empty: false}", "{json: /s, contains: ell}", "{json: /arr, contains: 2}",
 		"{json: /a, eqJson: /c}", "{json: /a, ne: 8}", "{json: /a, neJson: /d}",
 		"{json: /items, any: {json: /e, eq: y}}", "{json: /arr, any: {json: '', min: 3}}",
+		"{json: /arr, all: {json: '', type: number}}", "{json: /n, in: [1, 5, 9]}", "{json: /s, in: [nope, hello]}", "{json: /arr, all: {json: '', in: [1, 2, 3, 4]}}", "{json: /items, all: {json: /e, type: string}}", "{json: /empty, all: {json: '', eq: 1}}",
 		"{header: X-H, eq: val}", "{header: X-H, exists: true}", "{header: Nope, absent: true}",
 		"{json: /s, type: string, eq: hello, matches: ^h}",
 	}
@@ -56,6 +57,7 @@ func TestOperators(t *testing.T) {
 		"{json: /s, contains: zzz}", "{json: /arr, contains: 9}", "{json: /a, eqJson: /d}", "{json: /a, ne: 7}", "{json: /a, neJson: /c}",
 		"{json: /items, any: {json: /e, eq: z}}", "{header: X-H, eq: other}", "{header: Nope, exists: true}",
 		"{json: /nothing, any: {json: '', eq: 1}}",
+		"{json: /arr, all: {json: '', min: 2}}", "{json: /n, in: [1, 2]}", "{json: /s, in: [a, b]}", "{json: /nothing, in: [1]}", "{json: /arr, all: {json: '', in: [1, 2]}}", "{json: /items, all: {json: /e, eq: x}}", "{json: /nothing, all: {json: '', eq: 1}}", "{json: /s, all: {json: '', eq: 1}}",
 	}
 	for _, y := range fail {
 		rs := ev.Run(check(t, y), resp, sc)

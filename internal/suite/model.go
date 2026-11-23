@@ -72,6 +72,7 @@ type Step struct {
 	Multipart      *Multipart         `yaml:"multipart"`        // multipart/form-data body with fixture files
 	Set            map[string]any     `yaml:"set"`              // variables assigned before the request is built
 	TimeoutSeconds int                `yaml:"timeoutSeconds"`   // overrides the suite timeout for this step
+	DelaySeconds   int                `yaml:"delaySeconds"`     // wait this long before sending the request (for APIs that order by a coarse timestamp)
 	Body           string             `yaml:"body"`             // text body
 	Capture        map[string]Capture `yaml:"capture"`
 	Assert         []Group            `yaml:"assert"`
@@ -130,9 +131,12 @@ type Check struct {
 	LengthMin *int      `yaml:"lengthMin"`
 	Empty     *bool     `yaml:"empty"`
 	Contains  yaml.Node `yaml:"contains"`
+	In        yaml.Node `yaml:"in"` // equals one of the listed values
 	// Any requires at least one array element to satisfy the nested check
 	// (the check's own json pointer is relative to the element).
 	Any *Check `yaml:"any"`
+	// All requires every array element to satisfy the nested check (an empty array passes).
+	All *Check `yaml:"all"`
 	// DecodeJSON: the value at json is base64 text of a JSON document; the
 	// operators apply to the value at this pointer inside the decoded document.
 	DecodeJSON *string `yaml:"decodeJson"`

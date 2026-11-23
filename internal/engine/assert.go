@@ -309,6 +309,27 @@ func (ev *Evaluator) ops(c suite.Check, t target, sc *Scope) []results.CheckResu
 			}
 		}
 	}
+	if c.In.Kind != 0 {
+		list, err := ev.expected(&c.In, sc)
+		opts, isList := list.([]any)
+		switch {
+		case err != nil:
+			errRes("in", err)
+		case !isList:
+			errRes("in", fmt.Errorf("in needs a list of values"))
+		case !t.found:
+			missing("in")
+		default:
+			ok := false
+			for _, w := range opts {
+				if equalJSON(t.val, w) {
+					ok = true
+					break
+				}
+			}
+			add("in "+show(opts), ok, fmt.Sprintf("%s is not one of %s", show(t.val), show(opts)))
+		}
+	}
 	if c.Any != nil {
 		arr, isArr := t.val.([]any)
 		switch {
@@ -341,6 +362,39 @@ func (ev *Evaluator) ops(c suite.Check, t target, sc *Scope) []results.CheckResu
 				errRes("any", perr)
 			} else {
 				add("any element matches", matched, fmt.Sprintf("no element of %d satisfied the check (last: %s)", len(arr), lastErr))
+			}
+		}
+	}
+	if c.All != nil {
+		arr, isArr := t.val.([]any)
+		switch {
+		case !t.found:
+			missing("all")
+		case !isArr:
+			add("all", false, fmt.Sprintf("expected an array, got %s", typeName(t.val)))
+		default:
+			var perr error
+			bad, firstErr := 0, ""
+			for i, el := range arr {
+				v, found, e := jsonptr.Get(el, c.All.JSON)
+				if e != nil {
+					perr = e
+					break
+				}
+				for _, r := range ev.ops(*c.All, target{doc: el, desc: "element", val: v, found: found}, sc) {
+					if r.Status != results.Passed {
+						if bad == 0 {
+							firstErr = fmt.Sprintf("element %d: %s", i, r.Message)
+						}
+						bad++
+						break
+					}
+				}
+			}
+			if perr != nil {
+				errRes("all", perr)
+			} else {
+				add("all elements match", bad == 0, fmt.Sprintf("%d of %d elements failed the check (first: %s)", bad, len(arr), firstErr))
 			}
 		}
 	}
